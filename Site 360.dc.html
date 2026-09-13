@@ -107,6 +107,15 @@
       </div>
     </div>
 
+    <div style="position: absolute; right: 40px; bottom: 40px; display: flex; gap: 12px; pointer-events: auto; z-index: 15;">
+      <button onClick="{{ reverVideo }}" title="Ver o vídeo outra vez" style="all: unset; cursor: pointer; display: flex; align-items: center; gap: 9px; padding: 11px 17px; background: rgba(10,26,38,.8); border: 1px solid rgba(220,203,168,.34); font-family: 'IBM Plex Mono', monospace; font-size: 11px; letter-spacing: .16em; text-transform: uppercase; color: #DCCBA8;" style-hover="border-color: #C9A227; color: #C9A227;">
+        <span style="font-size: 13px;">▶</span> Rever vídeo
+      </button>
+      <button onClick="{{ toggleMusica }}" title="Ligar/desligar música" style="all: unset; cursor: pointer; display: flex; align-items: center; gap: 9px; padding: 11px 17px; background: rgba(10,26,38,.8); border: 1px solid {{ bordaMusica }}; font-family: 'IBM Plex Mono', monospace; font-size: 11px; letter-spacing: .16em; text-transform: uppercase; color: {{ corMusica }};" style-hover="border-color: #C9A227;">
+        <span style="font-size: 13px;">{{ iconeMusica }}</span> {{ textoMusica }}
+      </button>
+    </div>
+
     <div style="position: absolute; left: 40px; bottom: 34px; right: 40px; display: flex; flex-direction: column; gap: 24px; pointer-events: none;">
       <div style="display: flex; flex-direction: column; align-items: flex-start; gap: 18px; max-width: 560px;">
         <div style="display: flex; align-items: center; gap: 14px;">
@@ -303,7 +312,7 @@ const monSvg = (nome, size) => `<svg width="${size}" height="${size}" viewBox="-
 
 class Component extends DCLogic {
   // ?menu=1 (vindo de um percurso) salta o filme e abre directo no mapa
-  state = { fase: /[?&]menu=1/.test(window.location.search) ? 'mapa' : 'entrada', ficha: null, prog: 0, percurso: null, pairado: null, z: 1.02, cx: .5, cy: .5 };
+  state = { fase: /[?&]menu=1/.test(window.location.search) ? 'mapa' : 'entrada', ficha: null, prog: 0, percurso: null, pairado: null, z: 1.02, cx: .5, cy: .5, menuMute: false };
 
   // ——— Vozes da intro: tocadas aqui (na página-mãe) porque o clique do ecrã
   // de entrada é o gesto que o browser exige para deixar tocar som. Cada frase
@@ -314,7 +323,8 @@ class Component extends DCLogic {
     // início do filme (antes da descida a Azurara)
     { t: 1.0,   src: 'frase-1' },  { t: 6.7,  src: 'frase-2' },  { t: 11.9, src: 'frase-3' },
     { t: 15.8,  src: 'frase-4' },  { t: 18.7, src: 'frase-5' },  { t: 23.1, src: 'frase-6' },
-    { t: 26.35, src: 'frase-7' },  { t: 30.4, src: 'frase-8' },  { t: 33.9, src: 'frase-9' },
+    { t: 26.35, src: 'frase-7' },  { t: 30.4, src: 'frase-8' },
+    // frase-9 (~33,9s) removida: era a voz "Todos se encontram" repetida/em brasileiro
     { t: 36.4,  src: 'frase-10' },
     // nome do itinerário, quando o cartão de cada cena aparece — volume mais alto
     { t: 43.35, src: 'natureza', vol: 1 },
@@ -364,6 +374,19 @@ class Component extends DCLogic {
     try { localStorage.setItem('animstage-v3:t', '0'); } catch (e) {}
     this.setState({ fase: 'intro' });
   }
+
+  // rever o vídeo a partir do menu: pára a música, limpa as fontes e recomeça do zero
+  reverVideo() {
+    try { if (this.srcVideo) this.srcVideo.stop(); } catch (e) {}
+    try { if (this.srcMenu) this.srcMenu.stop(); } catch (e) {}
+    this.srcVideo = null; this.srcMenu = null;
+    this.pararVozes();
+    this.tocadas = {}; this.fogoTocado = false; this.volVid = 0; this.volMenu = 0;
+    try { localStorage.setItem('animstage-v3:t', '0'); } catch (e) {}
+    this.setState({ fase: 'intro' });
+  }
+  // ligar/desligar a música do menu
+  toggleMusica() { this.setState({ menuMute: !this.state.menuMute }); }
 
   componentDidMount() {
     this.medir();
@@ -438,7 +461,7 @@ class Component extends DCLogic {
         if (this.ac && this.bufMenu && !this.srcMenu) {
           try { this.srcMenu = this.ac.createBufferSource(); this.srcMenu.buffer = this.bufMenu; this.srcMenu.loop = true; this.srcMenu.connect(this.gainMenu); this.srcMenu.start(); } catch (e) {}
         }
-        this.volMenu += (0.40 - this.volMenu) * 0.05;
+        this.volMenu += ((this.state.menuMute ? 0 : 0.40) - this.volMenu) * 0.05;
       } else {
         this.volMenu += (0 - this.volMenu) * 0.08;
       }
@@ -745,6 +768,12 @@ class Component extends DCLogic {
       naEntrada: S.fase === 'entrada',
       entrar: () => this.entrar(),
       noMapa: S.fase === 'mapa',
+      reverVideo: () => this.reverVideo(),
+      toggleMusica: () => this.toggleMusica(),
+      iconeMusica: S.menuMute ? '○' : '●',
+      textoMusica: S.menuMute ? 'Música off' : 'Música',
+      corMusica: S.menuMute ? '#8FA3AD' : '#DCCBA8',
+      bordaMusica: S.menuMute ? 'rgba(220,203,168,.2)' : 'rgba(220,203,168,.34)',
       noPercurso: S.fase === 'percurso',
       dica: 'Clica num palco ou escolhe um percurso',
       irMapa: (e) => { if (e && e.preventDefault) e.preventDefault(); this.setState({ fase: 'mapa', percurso: null, ficha: null, prog: 0 }); },
