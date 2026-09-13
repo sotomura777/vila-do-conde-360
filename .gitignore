@@ -1,0 +1,8 @@
+# macOS
+.DS_Store
+
+# Claude Code
+.claude/
+
+# Screenshots de teste (Playwright)
+.playwright-mcp/

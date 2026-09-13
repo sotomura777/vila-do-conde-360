@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<title>Vila do Conde 360º — Intro do site</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&family=Karla:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+body{margin:0;background:#07141d;color:#F1F5F6}
+a{color:#C9A227}a:hover{color:#DCCBA8}
+</style>
+<script>window.OM_SCENES = '[{"name":"Recinto","dur":11.6,"desc":"Aproximação muito lenta ao centro. A primeira frase escreve-se palavra a palavra; o ponto acende aos 7,4s e o anel desenha-se como um relógio","nat":11.6},{"name":"Concelho","dur":11,"desc":"Afasta devagar: o concelho abre. O ponto e o anel encolhem sozinhos"},{"name":"NaoCabe","dur":3.6,"desc":"Aproxima muito pouco. Isto não cabe num recinto","nat":3.6},{"name":"Contrario","dur":3.5,"desc":"Desliza até ao enquadramento do clipe. O anel apaga-se e a cidade fica às escuras","nat":6},{"name":"Renda","dur":9.6,"desc":"Os palcos acendem do centro para fora; cada traçado desenha-se com o seu nome e símbolo — Água, Sabores, Cultura, Natureza — e logo depois tudo se apaga","nat":10.6},{"name":"Natureza","dur":18.25,"desc":"Descida à Praia de Azurara com surf, entra no telemóvel dos meninos e sai nos passadiços de Mindelo — trajeto Aventura e Natureza","nat":18.25},{"name":"Mar","dur":14,"desc":"Forte de São João, marginal e o rio até ao centro — trajeto Mar","nat":14},{"name":"Cultura","dur":6,"desc":"Os arcos do aqueduto com a feira — trajeto Cultura","nat":6},{"name":"Sabores","dur":6,"desc":"Restaurante com vista para a Nau — trajeto Sabores","nat":6},{"name":"Festa","dur":18,"desc":"Ruas antigas, capela e o miradouro sobre o palco final; todos os caminhos se encontram na festa","nat":18},{"name":"Alto","dur":4.9,"desc":"Fogo e subida sobre a cidade iluminada; uma app que une a cidade toda","nat":4.9},{"name":"Aérea","dur":3,"desc":"Passagem para a vista aérea noturna; entra o título A cidade é o palco"},{"name":"Telemóvel","dur":2,"desc":"A cidade escurece e o telemóvel sobe até ao centro"},{"name":"Percursos","dur":5,"desc":"No ecrã desenham-se os quatro percursos com os pontos de carimbo"},{"name":"Carimbar","dur":6,"desc":"Aproximação a um ponto, toque em Carimbar, a rosácea cai e conta +40"},{"name":"Passaporte","dur":4,"desc":"O passaporte abre, os carimbos pousam e a barra de nível avança"},{"name":"Prémio","dur":3,"desc":"O prémio final acende: a renda das artesãs"},{"name":"Fecho","dur":4,"desc":"O telemóvel recolhe; marca, 360º e Onde passas, carimbas"}]';</script>
+<script>window.OM_PLAYBACK = '{"mode":"times","count":1}'; window.OM_INTRO = true;</script>
+<template id="__bundler_thumbnail"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200"><rect width="200" height="200" fill="#0A1A26"/><circle cx="100" cy="100" r="46" fill="none" stroke="#DCCBA8" stroke-width="3"/><circle cx="100" cy="100" r="23" fill="none" stroke="#DCCBA8" stroke-width="3"/><path d="M100 54V146M54 100H146" stroke="#DCCBA8" stroke-width="2.4"/><circle cx="100" cy="100" r="7" fill="#C9A227"/><text x="100" y="176" fill="#C9A227" font-family="monospace" font-size="17" letter-spacing="3" text-anchor="middle">360 · II</text></svg></template>
+<script>
+(function(){
+  var TOTAL = 133.5, avisado = false;
+  // as vozes das frases são tocadas pela página-mãe (Site 360), que tem o ecrã
+  // de entrada — aqui fica só o relógio que avisa quando a intro termina.
+  // a intro começa sempre do zero e some quando chega ao fim
+  try { localStorage.setItem('animstage-v3:t', '0'); } catch(e){}
+  function tick(){
+    var t = 0;
+    try { t = parseFloat(localStorage.getItem('animstage-v3:t') || '0'); } catch(e){}
+    if (t >= TOTAL - 0.1 && !avisado) { avisado = true; try { window.parent.postMessage({ type: 'vc360:intro-fim' }, '*'); } catch(e){} }
+    requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+})();
+</script>
+<style>
+  /* sem barra de controlos do motor de animação dentro do site */
+  [data-omelette-chrome] { display: none !important; }
+</style>
+</helmet>
+<x-import component-from-global-scope="CompletoApp" from="./animations-v3.jsx ./video-completo.jsx" hint-size="100%,100vh"></x-import>
+</x-dc>
+</body>
+</html>

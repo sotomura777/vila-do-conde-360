@@ -1,0 +1,14 @@
+VILA DO CONDE 360º — site
+
+Abre index.html (ou Site 360.dc.html) num servidor local ou publica a pasta inteira (Netlify, Vercel, GitHub Pages, qualquer alojamento estático).
+
+Nota: abrir directamente por duplo-clique (file://) pode bloquear os vídeos e a intro em alguns browsers. Se isso acontecer, serve a pasta:
+  python3 -m http.server 8000
+e abre http://localhost:8000/
+
+Conteúdo:
+- Site 360.dc.html — mapa dos percursos (entrada)
+- Intro Site.dc.html — vídeo de abertura (toca dentro do site)
+- Percurso Cultural.dc.html — percurso com scroll, paragens, auras e passaporte
+- assets/ — vista aérea, filme, fotogramas do percurso
+- *.js / *.jsx — runtime
