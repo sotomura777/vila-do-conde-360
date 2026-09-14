@@ -3,9 +3,17 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preload" as="image" href="assets/pc-frames-0.webp" fetchpriority="high" />
+<style>
+  @keyframes pcSpin { to { transform: rotate(360deg); } }
+  #pc-loading { position: fixed; inset: 0; z-index: 9999; display: grid; place-items: center; background: #07141d; transition: opacity .4s ease; }
+  #pc-loading .sp { width: 34px; height: 34px; border: 2px solid rgba(220,203,168,.22); border-top-color: #C9A227; border-radius: 50%; animation: pcSpin .9s linear infinite; }
+  #pc-loading .tx { margin-top: 18px; font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: .22em; text-transform: uppercase; color: #DCCBA8; }
+</style>
 <script src="./support.js"></script>
 </head>
 <body>
+<div id="pc-loading"><div style="display:flex;flex-direction:column;align-items:center;"><span class="sp"></span><span class="tx">A carregar o percurso</span></div></div>
 <x-dc>
 <helmet>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -355,7 +363,7 @@
   <sc-if value="{{ naEntrada }}" hint-placeholder-val="{{ true }}">
     <div style="position: absolute; inset: 0; opacity: {{ opMapa }}; transition: opacity 1.4s ease; pointer-events: {{ peMapa }};">
       <div style="position: absolute; inset: 0; overflow: hidden; transform: {{ tfMapa }}; transition: transform 1.5s cubic-bezier(.3,.7,.2,1);">
-        <img src="assets/aerea-vc.png" alt="Vila do Conde de cima" draggable="false" style="position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; user-select: none;" />
+        <img src="assets/aerea-vc.webp" decoding="async" alt="Vila do Conde de cima" draggable="false" style="position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; user-select: none;" />
         <div style="position: absolute; inset: 0; background: rgba(7,20,29,.42);"></div>
         <svg viewBox="0 0 1000 574" preserveAspectRatio="none" style="position: absolute; inset: 0; width: 100%; height: 100%;" fill="none">
           <path d="M294 122 C337 118 370 118 406 114 C431 113 447 114 465 117 C450 140 432 152 413 160 C438 187 456 199 474 207 C486 216 495 222 507 235" stroke="#E0783C" stroke-width="9" opacity=".3" stroke-linecap="round" style="filter: blur(5px)"></path>
@@ -640,7 +648,10 @@ class Component extends DCLogic {
     this.folhas = [];
     for (let s = 0; s < 13; s++) {
       const im = new Image();
-      im.src = `assets/pc-frames-${s}.jpg`;
+      im.decoding = 'async';
+      // a 1.ª folha (frames iniciais) tem prioridade — aparece logo; as outras seguem
+      im.fetchPriority = s === 0 ? 'high' : 'low';
+      im.src = `assets/pc-frames-${s}.webp`;
       im.onload = () => { this.desenhado = -1; };
       this.folhas.push(im);
     }
@@ -664,6 +675,11 @@ class Component extends DCLogic {
           const k = f % 36;
           c.getContext('2d').drawImage(im, (k % 6) * 864, Math.floor(k / 6) * 496, 864, 496, 0, 0, 864, 496);
           this.desenhado = f;
+          if (!this._pronto) { // 1.º frame desenhado: esconde o "a carregar"
+            this._pronto = true;
+            const el = document.getElementById('pc-loading');
+            if (el) { el.style.opacity = '0'; setTimeout(() => { if (el.parentNode) el.parentNode.removeChild(el); }, 400); }
+          }
         }
       }
       this.raf = requestAnimationFrame(this.laco);

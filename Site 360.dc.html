@@ -37,7 +37,7 @@
   <div style="position: absolute; inset: 0; opacity: {{ opCeu }}; transition: opacity 1.1s ease; background: linear-gradient(to bottom, #07141d 0%, #123241 46%, #2b5f6e 74%, #4b7d84 100%);"></div>
   <div ref="{{ palco }}" style="position: absolute; inset: 0; perspective: 1400px; perspective-origin: 50% 62%; cursor: {{ cursorMapa }}; touch-action: none;">
     <div ref="{{ plane }}" style="position: absolute; inset: 0; transform-origin: 50% 50%; transform-style: preserve-3d; will-change: transform;">
-      <img src="assets/aerea-vc.png" alt="Vila do Conde vista de cima" draggable="false" style="position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; user-select: none;" />
+      <img src="assets/aerea-vc.webp" decoding="async" alt="Vila do Conde vista de cima" draggable="false" style="position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; user-select: none;" />
       <div style="position: absolute; inset: 0; background: #0A1A26; opacity: {{ opEscuro }}; transition: opacity 1.1s ease;"></div>
 
       <div style="position: absolute; left: {{ imgL }}; top: {{ imgT }}; width: {{ imgW }}; height: {{ imgH }}; transform-style: preserve-3d;">
@@ -340,29 +340,33 @@ class Component extends DCLogic {
 
   tocarFrase(i) {
     if (this.tocadas[i]) return;
+    const f = this.FRASES[i];
+    const buf = this.bufVoz && this.bufVoz[f.src];
+    if (!this.ac || !buf) return;   // buffer ainda a carregar: tenta no próximo frame
     this.tocadas[i] = true;
-    try { this.audios[i].currentTime = 0; var p = this.audios[i].play(); if (p && p.catch) p.catch(function(){}); } catch (e) {}
+    try {
+      const src = this.ac.createBufferSource();
+      src.buffer = buf;
+      const g = this.ac.createGain();
+      g.gain.value = f.vol != null ? f.vol : 0.72;
+      src.connect(g); g.connect(this.ac.destination);
+      src.start();
+      this.vozSources.push(src);
+      this.vozAteQuando = this.ac.currentTime + buf.duration;
+    } catch (e) {}
   }
   // ao saltar ou terminar a intro, cala as vozes que ainda estejam a tocar
   pararVozes() {
-    (this.audios || []).forEach((a) => { try { a.pause(); a.currentTime = 0; } catch (e) {} });
+    (this.vozSources || []).forEach((s) => { try { s.stop(); } catch (e) {} });
+    this.vozSources = [];
+    this.vozAteQuando = 0;
   }
 
-  // desbloqueia cada som DENTRO de um gesto (o Safari exige-o), mas em SILÊNCIO.
-  // toca mudo só para o browser "libertar" o elemento; a rede de segurança abaixo
-  // garante que o som volta e que as vozes ficam paradas — mesmo que a promessa
-  // do play() nunca resolva (ficheiros a carregar).
+  // um gesto do utilizador é preciso para o áudio começar: retoma o AudioContext
   desbloquear() {
     if (this._desbloqueado) return;
     this._desbloqueado = true;
-    // Web Audio: retomar o contexto (fica suspenso até um gesto)
     try { if (this.ac && this.ac.resume) this.ac.resume(); } catch (e) {}
-    // vozes (elementos <audio>): libertar com play mudo e parar logo, para tocarem no momento certo
-    const soltar = (a) => { if (!a) return; try { a.muted = true; const p = a.play(); if (p && p.then) p.then(() => { try { a.pause(); a.currentTime = 0; } catch (e) {} }).catch(() => {}); } catch (e) {} };
-    (this.audios || []).forEach(soltar);
-    setTimeout(() => {
-      (this.audios || []).forEach((a) => { if (a) { try { a.pause(); a.currentTime = 0; a.muted = false; } catch (e) {} } });
-    }, 400);
   }
 
   // o clique em "entrar" é o gesto: arranca a intro e liga o som
@@ -400,14 +404,12 @@ class Component extends DCLogic {
     this.armarGesto = () => { this.armado = true; this.desbloquear(); };
     ['pointerdown', 'touchstart', 'keydown'].forEach((ev) => window.addEventListener(ev, this.armarGesto, { passive: true }));
 
-    // maestro de áudio: pré-carrega as vozes e dispara-as ao ritmo do filme
-    // os nomes dos percursos levam vol 1; as frases ficam um pouco abaixo, para os nomes se destacarem
-    this.audios = this.FRASES.map((f) => { const a = new Audio('assets/audio/' + f.src + '.mp3'); a.preload = 'auto'; a.volume = f.vol != null ? f.vol : 0.72; return a; });
-    // músicas via Web Audio API: os elementos <audio> ficavam "presos" no Safari
-    // (currentTime não avançava) por haver muitos sons. Um só AudioContext resolve.
+    // TUDO via Web Audio API: dá arranque exacto (as vozes em <audio> cortavam a
+    // primeira sílaba no Safari) e não sofre do bug dos elementos <audio> "presos".
     this.volVid = 0; this.volMenu = 0; this.fogoTocado = false;
     this.tocadas = {};
     this.armado = false;
+    this.bufVoz = {}; this.vozSources = []; this.vozAteQuando = 0;
     try {
       const AC = window.AudioContext || window.webkitAudioContext;
       this.ac = new AC();
@@ -418,6 +420,8 @@ class Component extends DCLogic {
       carregar('assets/audio/musica-video.mp3').then((buf) => { this.bufVideo = buf; }).catch((e) => { this._err = 'video:' + e; });
       carregar('assets/audio/musica-menu.mp3').then((buf) => { this.bufMenu = buf; }).catch((e) => { this._err = 'menu:' + e; });
       carregar('assets/audio/fogo.mp3').then((buf) => { this.bufFogo = buf; }).catch((e) => { this._err = 'fogo:' + e; });
+      // vozes: um buffer por frase (arranque sem corte)
+      this.FRASES.forEach((f) => { carregar('assets/audio/' + f.src + '.mp3').then((buf) => { this.bufVoz[f.src] = buf; }).catch(() => {}); });
     } catch (e) { this.ac = null; this._err = 'sem AudioContext'; }
 
     // ponto da descida a Azurara: antes há muita fala (música bem baixa), depois sobe
@@ -448,7 +452,7 @@ class Component extends DCLogic {
           try { this.srcVideo = this.ac.createBufferSource(); this.srcVideo.buffer = this.bufVideo; this.srcVideo.loop = true; this.srcVideo.connect(this.gainVideo); this.srcVideo.start(); } catch (e) {}
         }
         const base = t < AZURARA ? 0.24 : 0.55;
-        const falando = this.audios.some((a) => !a.paused && !a.ended && a.currentTime > 0.02);
+        const falando = this.ac && this.ac.currentTime < this.vozAteQuando;
         const alvo = falando ? base * 0.5 : base;
         this.volVid += (alvo - this.volVid) * 0.06;
       } else {

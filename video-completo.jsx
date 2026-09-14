@@ -261,7 +261,7 @@
     return (
       <div data-screen-label={`t=${Math.floor(T)}s`} style={{ position: 'absolute', inset: 0, overflow: 'hidden', background: NAVY, fontFamily: SANS, color: CREAM }}>
         <div style={{ position: 'absolute', left: 0, top: 0, width: W, height: H, transformOrigin: '0 0', transform: `translate(${tx}px,${ty}px) scale(${z})` }}>
-          <img src={SRC('assets/aerea-vc.png')} alt="" style={{ position: 'absolute', inset: 0, width: W, height: H, objectFit: 'cover', display: 'block', filter: `brightness(${bright}) saturate(${.78 + .32 * bright})` }} />
+          <img src={SRC('assets/aerea-vc.webp')} alt="" style={{ position: 'absolute', inset: 0, width: W, height: H, objectFit: 'cover', display: 'block', filter: `brightness(${bright}) saturate(${.78 + .32 * bright})` }} />
           <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} style={{ position: 'absolute', inset: 0, overflow: 'visible' }} fill="none">
             <g transform={`translate(${X(CENTRO[0])} ${Y(CENTRO[1])})`} opacity={dotIn * ringOut}>
               <circle r={112 / z} fill={GOLD} opacity={(.16 + .14 * Math.sin(T * 1.6)) * clamp((dotIn - .3) / .7, 0, 1)} style={{ filter: `blur(${26 / z}px)` }} />
@@ -666,7 +666,9 @@
     const veil = 0;
 
     const zoom = MOTION.draw(1.0, 1.1, Z - 1.2, end)(T);    // o congelamento continua a respirar
-    const dim = MOTION.enter(0, .5, C.Telemóvel + .15, C.Telemóvel + 1.5)(T);
+    // escurecimento nocturno começa quando a vista aérea entra (Z), não só na cena
+    // do telemóvel — senão via-se o último fotograma claro ("flash de dia") ~3s
+    const dim = MOTION.enter(0, .5, Z - .4, Z + 1.0)(T);
     const phoneY = MOTION.enter(H + 100, PY, C.Telemóvel, C.Telemóvel + 1.4)(T);
     const phoneOut = MOTION.enter(1, .001, C.Fecho, C.Fecho + .9)(T);
     const phoneScale = T < C.Fecho ? 1 : phoneOut;
